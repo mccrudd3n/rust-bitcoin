@@ -109,6 +109,7 @@ fn bitcoin_genesis_tx() -> Transaction {
 /// Constructs and returns the genesis block
 pub fn genesis_block(network: Network) -> Block {
     let txdata = vec![bitcoin_genesis_tx()];
+    let blocksig = vec![];
     let hash: sha256d::Hash = txdata[0].txid().into();
     let merkle_root = hash.into();
     match network {
@@ -123,6 +124,7 @@ pub fn genesis_block(network: Network) -> Block {
                     nonce: 2083236893
                 },
                 txdata,
+                blocksig,
             }
         }
         Network::Testnet => {
@@ -136,6 +138,7 @@ pub fn genesis_block(network: Network) -> Block {
                     nonce: 414098458
                 },
                 txdata,
+                blocksig,
             }
         }
         Network::Signet => {
@@ -149,6 +152,7 @@ pub fn genesis_block(network: Network) -> Block {
                     nonce: 52613770
                 },
                 txdata,
+                blocksig,
             }
         }
         Network::Regtest => {
@@ -162,6 +166,7 @@ pub fn genesis_block(network: Network) -> Block {
                     nonce: 2
                 },
                 txdata,
+                blocksig,
             }
         }
     }
