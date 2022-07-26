@@ -177,10 +177,12 @@ pub struct Block {
     /// The block header
     pub header: BlockHeader,
     /// List of transactions contained in the block
-    pub txdata: Vec<Transaction>
+    pub txdata: Vec<Transaction>,
+    /// PoS block signature
+    pub blocksig: Vec<u8>
 }
 
-impl_consensus_encoding!(Block, header, txdata);
+impl_consensus_encoding!(Block, header, txdata, blocksig);
 
 impl Block {
     /// Returns the block hash.
