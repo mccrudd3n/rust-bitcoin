@@ -98,6 +98,7 @@ pub fn genesis_block(network: Network) -> Block {
     match network {
         Network::Bitcoin => {
             let txdata = vec![bitcoin_genesis_tx()];
+            let blocksig = vec![];
             Block {
                 header: BlockHeader {
                     version: 1,
@@ -107,11 +108,13 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: 0x1d00ffff,
                     nonce: 2083236893
                 },
-                txdata: txdata
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
         Network::Testnet => {
             let txdata = vec![bitcoin_genesis_tx()];
+            let blocksig = vec![];
             Block {
                 header: BlockHeader {
                     version: 1,
@@ -121,11 +124,13 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: 0x1d00ffff,
                     nonce: 414098458
                 },
-                txdata: txdata
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
         Network::Regtest => {
             let txdata = vec![bitcoin_genesis_tx()];
+            let blocksig = vec![];
             Block {
                 header: BlockHeader {
                     version: 1,
@@ -135,7 +140,8 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: 0x207fffff,
                     nonce: 2
                 },
-                txdata: txdata
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
     }
