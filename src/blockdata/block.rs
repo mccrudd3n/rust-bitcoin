@@ -214,6 +214,11 @@ impl Encodable for Block {
         let mut len = 0;
         len += self.header.consensus_encode(&mut s)?;
         len += self.txdata.consensus_encode(&mut s)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if self.txdata.len() > 1 && self.txdata[1].is_coin_stake() {
+            len += self.blocksig.consensus_encode(&mut s)?;
+        }
         Ok(len)
     }
 }
@@ -225,13 +230,25 @@ impl Decodable for Block {
     ) -> Result<Self, ::consensus::encode::Error> {
         let header = BlockHeader::consensus_decode(&mut d)?;
         let txdata = Vec::<Transaction>::consensus_decode(&mut d)?;
-        let blocksig = vec![];
 
-        Ok(Block {
-            header: header,
-            txdata: txdata,
-            blocksig: blocksig
-        })
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if txdata.len() > 1 && txdata[1].is_coin_stake() {
+            let blocksig = Vec::<u8>::consensus_decode(&mut d)?;
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        } else {
+            let blocksig = vec![];
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        }
     }
 }
 
