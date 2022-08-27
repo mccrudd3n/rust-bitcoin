@@ -58,7 +58,9 @@ pub struct Block {
     /// The block header
     pub header: BlockHeader,
     /// List of transactions contained in the block
-    pub txdata: Vec<Transaction>
+    pub txdata: Vec<Transaction>,
+    /// PoS block signature
+    pub blocksig: Vec<u8>
 }
 
 impl Block {
@@ -204,9 +206,9 @@ impl BitcoinHash for Block {
 }
 
 impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce);
-impl_consensus_encoding!(Block, header, txdata);
+impl_consensus_encoding!(Block, header, txdata, blocksig);
 serde_struct_impl!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce);
-serde_struct_impl!(Block, header, txdata);
+serde_struct_impl!(Block, header, txdata, blocksig);
 
 #[cfg(test)]
 mod tests {
