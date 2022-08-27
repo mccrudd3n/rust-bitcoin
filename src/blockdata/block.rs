@@ -206,16 +206,25 @@ impl BitcoinHash for Block {
 }
 
 impl Encodable for Block {
-    fn consensus_encode<W: std::io::Write>(&self, e: W) -> Result<usize, crate::consensus::encode::Error> {
-        Ok(1)
+    fn consensus_encode<S: std::io::Write>(&self, mut s: S) -> Result<usize, crate::consensus::encode::Error> {
+        let mut len = 0;
+        len += self.header.consensus_encode(&mut s)?;
+        len += self.txdata.consensus_encode(&mut s)?;
+        Ok(len)
     }
 }
 
 impl Decodable for Block {
-    fn consensus_decode<D: std::io::Read>(d: D) -> Result<Self, crate::consensus::encode::Error> {
-        use blockdata::constants::genesis_block;
-        let newblock = genesis_block(Network::Bitcoin);
-        Ok(newblock)
+    fn consensus_decode<D: std::io::Read>(mut d: D) -> Result<Self, crate::consensus::encode::Error> {
+        let header = BlockHeader::consensus_decode(&mut d)?;
+        let txdata = Vec::<Transaction>::consensus_decode(&mut d)?;
+        let blocksig = vec![];
+
+        Ok(Block {
+            header: header,
+            txdata: txdata,
+            blocksig: blocksig
+        })
     }
 }
 
