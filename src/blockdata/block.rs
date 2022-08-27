@@ -216,7 +216,7 @@ impl Encodable for Block {
         len += self.txdata.consensus_encode(&mut s)?;
 
         // If the second transaction in the block is a coinstake, then we serialize the block signature
-        if self.txdata.len() > 1 && self.txdata[1].is_coin_stake() {
+        if self.txdata.len() >= 2 && self.txdata[1].is_coin_stake() {
             len += self.blocksig.consensus_encode(&mut s)?;
         }
         Ok(len)
@@ -232,7 +232,7 @@ impl Decodable for Block {
         let txdata = Vec::<Transaction>::consensus_decode(&mut d)?;
 
         // If the second transaction in the block is a coinstake, then we serialize the block signature
-        if txdata.len() > 1 && txdata[1].is_coin_stake() {
+        if txdata.len() >= 2 && txdata[1].is_coin_stake() {
             let blocksig = Vec::<u8>::consensus_decode(&mut d)?;
 
             Ok(Block {
