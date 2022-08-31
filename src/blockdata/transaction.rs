@@ -424,6 +424,11 @@ impl Transaction {
     pub fn is_coin_base(&self) -> bool {
         self.input.len() == 1 && self.input[0].previous_output.is_null()
     }
+
+    /// Is this a coin stake transaction?
+    pub fn is_coin_stake(&self) -> bool {
+        !self.input.is_empty() && !self.input[0].previous_output.is_null() && self.output.len() >= 2 && self.output[0].value == 0 && self.output[0].script_pubkey.is_empty()
+    }
 }
 
 impl BitcoinHash for Transaction {
@@ -640,7 +645,7 @@ mod tests {
                    Err(ParseOutPointError::Txid(sha256d::Hash::from_hex("5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c945X").unwrap_err())));
         assert_eq!(OutPoint::from_str("5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456:lol"),
                    Err(ParseOutPointError::Vout(u32::from_str("lol").unwrap_err())));
- 
+
         assert_eq!(OutPoint::from_str("5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456:42"),
                    Ok(OutPoint{
                        txid: sha256d::Hash::from_hex("5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456").unwrap(),

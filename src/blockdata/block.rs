@@ -26,7 +26,7 @@ use util;
 use util::Error::{BlockBadTarget, BlockBadProofOfWork};
 use util::hash::{BitcoinHash, MerkleRoot, bitcoin_merkle_root};
 use util::uint::Uint256;
-use consensus::encode::Encodable;
+use consensus::encode::{Decodable, Encodable};
 use network::constants::Network;
 use blockdata::transaction::Transaction;
 use blockdata::constants::max_target;
@@ -205,8 +205,55 @@ impl BitcoinHash for Block {
     }
 }
 
+impl Encodable for Block {
+    #[inline]
+    fn consensus_encode<S: ::std::io::Write>(
+        &self,
+        mut s: S,
+    ) -> Result<usize, ::consensus::encode::Error> {
+        let mut len = 0;
+        len += self.header.consensus_encode(&mut s)?;
+        len += self.txdata.consensus_encode(&mut s)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if self.txdata.len() >= 2 && self.txdata[1].is_coin_stake() {
+            len += self.blocksig.consensus_encode(&mut s)?;
+        }
+        Ok(len)
+    }
+}
+
+impl Decodable for Block {
+    #[inline]
+    fn consensus_decode<D: ::std::io::Read>(
+        mut d: D,
+    ) -> Result<Self, ::consensus::encode::Error> {
+        let header = BlockHeader::consensus_decode(&mut d)?;
+        let txdata = Vec::<Transaction>::consensus_decode(&mut d)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if txdata.len() >= 2 && txdata[1].is_coin_stake() {
+            let blocksig = Vec::<u8>::consensus_decode(&mut d)?;
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        } else {
+            let blocksig = vec![];
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        }
+    }
+}
+
 impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce);
-impl_consensus_encoding!(Block, header, txdata, blocksig);
+// impl_consensus_encoding!(Block, header, txdata, blocksig);
 serde_struct_impl!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce);
 serde_struct_impl!(Block, header, txdata, blocksig);
 
