@@ -19,7 +19,7 @@ use crate::util::hash::bitcoin_merkle_root;
 use crate::hashes::{Hash, HashEngine};
 use crate::hash_types::{Wtxid, BlockHash, TxMerkleNode, WitnessMerkleNode, WitnessCommitment};
 use crate::util::uint::Uint256;
-use crate::consensus::encode::Encodable;
+use crate::consensus::{encode, Decodable, Encodable};
 use crate::network::constants::Network;
 use crate::blockdata::transaction::Transaction;
 use crate::blockdata::constants::{max_target, WITNESS_SCALE_FACTOR};
@@ -182,7 +182,85 @@ pub struct Block {
     pub blocksig: Vec<u8>
 }
 
-impl_consensus_encoding!(Block, header, txdata, blocksig);
+impl Encodable for Block {
+    #[inline]
+    fn consensus_encode<R: ::std::io::Write + ?Sized>(
+        &self,
+        r: &mut R,
+    ) -> Result<usize, ::std::io::Error> {
+        let mut len = 0;
+
+        len += self.header.consensus_encode(r)?;
+        len += self.txdata.consensus_encode(r)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if self.txdata.len() >= 2 && self.txdata[1].is_coin_stake() {
+            len += self.blocksig.consensus_encode(r)?;
+        }
+        Ok(len)
+    }
+}
+
+impl Decodable for Block {
+    #[inline]
+    fn consensus_decode_from_finite_reader<R: ::std::io::Read + ?Sized>(
+        r: &mut R,
+    ) -> Result<Self, encode::Error> {
+        let header = BlockHeader::consensus_decode_from_finite_reader(r)?;
+        let txdata = Vec::<Transaction>::consensus_decode_from_finite_reader(r)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if txdata.len() >= 2 && txdata[1].is_coin_stake() {
+            let blocksig = Vec::<u8>::consensus_decode_from_finite_reader(r)?;
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        } else {
+            let blocksig = vec![];
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        }
+    }
+
+    #[inline]
+    fn consensus_decode<R: ::std::io::Read + ?Sized>(
+        r: &mut R,
+    ) -> Result<Self, encode::Error> {
+        use crate::io::Read as _;
+        let mut r = r.take(encode::MAX_VEC_SIZE as u64);
+
+        let header = BlockHeader::consensus_decode(r.by_ref())?;
+        let txdata = Vec::<Transaction>::consensus_decode(r.by_ref())?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if txdata.len() >= 2 && txdata[1].is_coin_stake() {
+            let blocksig = Vec::<u8>::consensus_decode(r.by_ref())?;
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        } else {
+            let blocksig = vec![];
+
+            Ok(Block {
+                header: header,
+                txdata: txdata,
+                blocksig: blocksig
+            })
+        }
+    }
+}
+
+// impl_consensus_encoding!(Block, header, txdata, blocksig);
 
 impl Block {
     /// Returns the block hash.

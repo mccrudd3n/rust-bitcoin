@@ -934,6 +934,11 @@ impl Transaction {
         self.input.len() == 1 && self.input[0].previous_output.is_null()
     }
 
+    /// Is this a coin stake transaction?
+    pub fn is_coin_stake(&self) -> bool {
+        !self.input.is_empty() && !self.input[0].previous_output.is_null() && self.output.len() >= 2 && self.output[0].value == 0 && self.output[0].script_pubkey.is_empty()
+    }
+
     /// Returns `true` if the transaction itself opted in to be BIP-125-replaceable (RBF). This
     /// **does not** cover the case where a transaction becomes replaceable due to ancestors being
     /// RBF.
