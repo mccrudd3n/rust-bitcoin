@@ -102,6 +102,7 @@ pub fn genesis_block(network: Network) -> Block {
     let txdata = vec![bitcoin_genesis_tx()];
     let hash: sha256d::Hash = txdata[0].txid().into();
     let merkle_root = hash.into();
+    let blocksig = vec![];
     match network {
         Network::Bitcoin => {
             Block {
@@ -113,10 +114,13 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: CompactTarget::from_consensus(0x1d00ffff),
                     nonce: 2083236893
                 },
-                txdata,
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
         Network::Testnet => {
+            let txdata = vec![bitcoin_genesis_tx()];
+            let blocksig = vec![];
             Block {
                 header: block::Header {
                     version: block::Version::ONE,
@@ -126,10 +130,13 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: CompactTarget::from_consensus(0x1d00ffff),
                     nonce: 414098458
                 },
-                txdata,
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
         Network::Signet => {
+            let txdata = vec![bitcoin_genesis_tx()];
+            let blocksig = vec![];
             Block {
                 header: block::Header {
                     version: block::Version::ONE,
@@ -139,10 +146,13 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: CompactTarget::from_consensus(0x1e0377ae),
                     nonce: 52613770
                 },
-                txdata,
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
         Network::Regtest => {
+            let txdata = vec![bitcoin_genesis_tx()];
+            let blocksig = vec![];
             Block {
                 header: block::Header {
                     version: block::Version::ONE,
@@ -152,7 +162,8 @@ pub fn genesis_block(network: Network) -> Block {
                     bits: CompactTarget::from_consensus(0x207fffff),
                     nonce: 2
                 },
-                txdata,
+                txdata: txdata,
+                blocksig: blocksig
             }
         }
     }
