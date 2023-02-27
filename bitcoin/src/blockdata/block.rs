@@ -349,7 +349,7 @@ impl Block {
         }
     }
 }
-impl Encodable for BlockHeader {
+impl Encodable for Header {
     #[inline]
     fn consensus_encode<R: ::std::io::Write + ?Sized>(
         &self,
