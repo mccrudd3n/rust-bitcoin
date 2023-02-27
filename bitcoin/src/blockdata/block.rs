@@ -209,7 +209,7 @@ pub struct Block {
     pub blocksig: Vec<u8>
 }
 
-impl_consensus_encoding!(Block, header, txdata, blocksig);
+//impl_consensus_encoding!(BlockHeader, version, prev_blockhash, merkle_root, time, bits, nonce, acc_checkpoint)
 
 impl Block {
     /// Returns the block hash.
@@ -350,47 +350,111 @@ impl Block {
     }
 }
 
-impl Encodable for Block {
+impl Encodable for Header {
     #[inline]
-    fn consensus_encode<S: ::std::io::Write>(
+    fn consensus_encode<R: ::std::io::Write + ?Sized>(
         &self,
-        mut s: S,
-    ) -> Result<usize, ::consensus::encode::Error> {
+        r: &mut R,
+    ) -> Result<usize, ::std::io::Error> {
         let mut len = 0;
-        len += self.header.consensus_encode(&mut s)?;
-        len += self.txdata.consensus_encode(&mut s)?;
 
-        // If the second transaction in the block is a coinstake, then we serialize the block signature
-        if self.txdata.len() >= 2 && self.txdata[1].is_coin_stake() {
-            len += self.blocksig.consensus_encode(&mut s)?;
+        len += self.version.consensus_encode(r)?;
+        len += self.prev_blockhash.consensus_encode(r)?;
+        len += self.merkle_root.consensus_encode(r)?;
+        len += self.time.consensus_encode(r)?;
+        len += self.bits.consensus_encode(r)?;
+        len += self.nonce.consensus_encode(r)?;
+        len += self.acc_checkpoint.consensus_encode(r)?;
+
+        // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
+        if self.version == 4 {
+            len += self.acc_checkpoint.consensus_encode(r)?;
         }
         Ok(len)
     }
 }
 
-impl Decodable for Block {
+impl Decodable for Header {
     #[inline]
-    fn consensus_decode<D: ::std::io::Read>(
-        mut d: D,
-    ) -> Result<Self, ::consensus::encode::Error> {
-        let header = Header::consensus_decode(&mut d)?;
-        let txdata = Vec::<Transaction>::consensus_decode(&mut d)?;
+    fn consensus_decode_from_finite_reader<R: ::std::io::Read + ?Sized>(
+        r: &mut R,
+    ) -> Result<Self, encode::Error> {
+        let version = i32::consensus_decode_from_finite_reader(r)?;
+        let prev_blockhash = BlockHash::consensus_decode_from_finite_reader(r)?;
+        let merkle_root = TxMerkleNode::consensus_decode_from_finite_reader(r)?;
+        let time = u32::consensus_decode_from_finite_reader(r)?;
+        let bits = u32::consensus_decode_from_finite_reader(r)?;
+        let nonce = u32::consensus_decode_from_finite_reader(r)?;
+        let acc_checkpoint = u32::consensus_decode_from_finite_reader(r)?;
+        // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
+        if version == 4 {
+            let acc_checkpoint = AccCheckpoint::consensus_decode_from_finite_reader(r)?;
 
-        // If the second transaction in the block is a coinstake, then we serialize the block signature
-        let blocksig = if txdata.len() >= 2 && txdata[1].is_coin_stake() {
-            Vec::<u8>::consensus_decode(&mut d)?
+            Ok(Header {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
         } else {
-            vec![]
-        };
+            let acc_checkpoint = Hash::all_zeros();
 
-        Ok(Block {
-            header: header,
-            txdata: txdata,
-            blocksig: blocksig,
-        })
-    }
+            Ok(Header {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        }
+
+    #[inline]
+    fn consensus_decode<R: ::std::io::Read + ?Sized>(
+        r: &mut R,
+    ) -> Result<Self, encode::Error> {
+        use crate::io::Read as _;
+        let mut r = r.take(encode::MAX_VEC_SIZE as u64);
+
+        let version = i32::consensus_decode(r.by_ref())?;
+        let prev_blockhash = BlockHash::consensus_decode(r.by_ref())?;
+        let merkle_root = TxMerkleNode::consensus_decode(r.by_ref())?;
+        let time = u32::consensus_decode(r.by_ref())?;
+        let bits = u32::consensus_decode(r.by_ref())?;
+        let nonce = u32::consensus_decode(r.by_ref())?;
+        let acc_checkpoint = u32::consensus_decode(r.by_ref())?;
+
+        // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
+        if version == 4 {
+            let acc_checkpoint = AccCheckpoint::consensus_decode(r.by_ref())?;
+
+            Ok(Header {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        } else {
+            let acc_checkpoint = Hash::all_zeros();
+
+            Ok(Header {
+                version: version,
+                prev_blockhash: prev_blockhash,
+                merkle_root: merkle_root,
+                time: time,
+                bits: bits,
+                nonce: nonce,
+                acc_checkpoint: acc_checkpoint
+            })
+        }
 }
-
 
 /// An error when looking up a BIP34 block height.
 #[derive(Debug, Clone, PartialEq, Eq)]

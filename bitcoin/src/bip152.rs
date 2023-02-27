@@ -404,8 +404,10 @@ mod test {
                 time: 2,
                 bits: CompactTarget::from_consensus(3),
                 nonce: 4,
+                acc_checkpoint: Hash::all_zeros(),
             },
             txdata: vec![dummy_tx(&[2]), dummy_tx(&[3]), dummy_tx(&[4])],
+            blocksig: vec![],
         }
     }
 
