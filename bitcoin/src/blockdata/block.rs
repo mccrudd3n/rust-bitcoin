@@ -349,8 +349,7 @@ impl Block {
         }
     }
 }
-
-impl Encodable for Header {
+impl Encodable for BlockHeader {
     #[inline]
     fn consensus_encode<R: ::std::io::Write + ?Sized>(
         &self,
@@ -364,7 +363,6 @@ impl Encodable for Header {
         len += self.time.consensus_encode(r)?;
         len += self.bits.consensus_encode(r)?;
         len += self.nonce.consensus_encode(r)?;
-        len += self.acc_checkpoint.consensus_encode(r)?;
 
         // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
         if self.version == 4 {
@@ -385,7 +383,7 @@ impl Decodable for Header {
         let time = u32::consensus_decode_from_finite_reader(r)?;
         let bits = u32::consensus_decode_from_finite_reader(r)?;
         let nonce = u32::consensus_decode_from_finite_reader(r)?;
-        let acc_checkpoint = u32::consensus_decode_from_finite_reader(r)?;
+
         // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
         if version == 4 {
             let acc_checkpoint = AccCheckpoint::consensus_decode_from_finite_reader(r)?;
@@ -412,6 +410,7 @@ impl Decodable for Header {
                 acc_checkpoint: acc_checkpoint
             })
         }
+    }
 
     #[inline]
     fn consensus_decode<R: ::std::io::Read + ?Sized>(
@@ -426,7 +425,6 @@ impl Decodable for Header {
         let time = u32::consensus_decode(r.by_ref())?;
         let bits = u32::consensus_decode(r.by_ref())?;
         let nonce = u32::consensus_decode(r.by_ref())?;
-        let acc_checkpoint = u32::consensus_decode(r.by_ref())?;
 
         // If the header version is 4, then we serialize the zerocoin accumulator checkpoint
         if version == 4 {
@@ -454,6 +452,7 @@ impl Decodable for Header {
                 acc_checkpoint: acc_checkpoint
             })
         }
+    }
 }
 
 /// An error when looking up a BIP34 block height.
