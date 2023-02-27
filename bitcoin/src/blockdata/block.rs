@@ -16,7 +16,7 @@ use core::fmt;
 use crate::merkle_tree;
 use crate::error::Error::{self, BlockBadTarget, BlockBadProofOfWork};
 use crate::hashes::{Hash, HashEngine};
-use crate::hash_types::{Wtxid, TxMerkleNode, WitnessMerkleNode, WitnessCommitment};
+use crate::hash_types::{Wtxid, TxMerkleNode, WitnessMerkleNode, WitnessCommitment, AccCheckpoint};
 use crate::consensus::{encode, Encodable, Decodable};
 use crate::blockdata::transaction::Transaction;
 use crate::blockdata::script;
@@ -54,9 +54,11 @@ pub struct Header {
     pub bits: CompactTarget,
     /// The nonce, selected to obtain a low enough blockhash.
     pub nonce: u32,
+    /// The zerocoin accumulator checkpoint.
+    pub acc_checkpoint: AccCheckpoint,
 }
 
-impl_consensus_encoding!(Header, version, prev_blockhash, merkle_root, time, bits, nonce);
+impl_consensus_encoding!(Header, version, prev_blockhash, merkle_root, time, bits, nonce, acc_checkpoint);
 
 impl Header {
     /// Returns the block hash.
@@ -347,6 +349,48 @@ impl Block {
         }
     }
 }
+
+impl Encodable for Block {
+    #[inline]
+    fn consensus_encode<S: ::std::io::Write>(
+        &self,
+        mut s: S,
+    ) -> Result<usize, ::consensus::encode::Error> {
+        let mut len = 0;
+        len += self.header.consensus_encode(&mut s)?;
+        len += self.txdata.consensus_encode(&mut s)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        if self.txdata.len() >= 2 && self.txdata[1].is_coin_stake() {
+            len += self.blocksig.consensus_encode(&mut s)?;
+        }
+        Ok(len)
+    }
+}
+
+impl Decodable for Block {
+    #[inline]
+    fn consensus_decode<D: ::std::io::Read>(
+        mut d: D,
+    ) -> Result<Self, ::consensus::encode::Error> {
+        let header = Header::consensus_decode(&mut d)?;
+        let txdata = Vec::<Transaction>::consensus_decode(&mut d)?;
+
+        // If the second transaction in the block is a coinstake, then we serialize the block signature
+        let blocksig = if txdata.len() >= 2 && txdata[1].is_coin_stake() {
+            Vec::<u8>::consensus_decode(&mut d)?
+        } else {
+            vec![]
+        };
+
+        Ok(Block {
+            header: header,
+            txdata: txdata,
+            blocksig: blocksig,
+        })
+    }
+}
+
 
 /// An error when looking up a BIP34 block height.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -92,6 +92,9 @@ mod newtypes {
         pub struct FilterHash(sha256d::Hash);
         /// Filter header, as defined in BIP-157
         pub struct FilterHeader(sha256d::Hash);
+
+         /// A hash of the AccCheckpoint or the zerocoin accumulator checkpoint.
+         pub struct AccCheckpoint(sha256d::Hash);
     }
 
     impl_hashencode!(Txid);
@@ -103,6 +106,6 @@ mod newtypes {
 
     impl_hashencode!(FilterHash);
     impl_hashencode!(FilterHeader);
-
+    impl_hashencode!(AccCheckpoint);
     impl_asref_push_bytes!(PubkeyHash, ScriptHash, WPubkeyHash, WScriptHash);
 }

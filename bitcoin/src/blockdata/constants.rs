@@ -112,7 +112,8 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1231006505,
                     bits: CompactTarget::from_consensus(0x1d00ffff),
-                    nonce: 2083236893
+                    nonce: 2083236893,
+                    acc_checkpoint: Hash::all_zeros(),
                 },
                 txdata: txdata,
                 blocksig: blocksig
@@ -128,7 +129,8 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1296688602,
                     bits: CompactTarget::from_consensus(0x1d00ffff),
-                    nonce: 414098458
+                    nonce: 414098458,
+                    acc_checkpoint: Hash::all_zeros(),
                 },
                 txdata: txdata,
                 blocksig: blocksig
@@ -144,7 +146,8 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1598918400,
                     bits: CompactTarget::from_consensus(0x1e0377ae),
-                    nonce: 52613770
+                    nonce: 52613770,
+                    acc_checkpoint: Hash::all_zeros(),
                 },
                 txdata: txdata,
                 blocksig: blocksig
@@ -160,7 +163,8 @@ pub fn genesis_block(network: Network) -> Block {
                     merkle_root,
                     time: 1296688602,
                     bits: CompactTarget::from_consensus(0x207fffff),
-                    nonce: 2
+                    nonce: 2,
+                    acc_checkpoint: Hash::all_zeros(),
                 },
                 txdata: txdata,
                 blocksig: blocksig
